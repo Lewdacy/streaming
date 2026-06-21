@@ -3,44 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fullscreen Video</title>
+    <title>Fullscreen Video Playlist - Anti Error</title>
     <style>
-        /* Remove margins and scrollbars */
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #000;
         }
-        /* Force video to fill the screen without distortion */
         video {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100vw;
-            height: 100vh;
+            position: absolute; top: 50%; left: 50%;
+            width: 100vw; height: 100vh;
             transform: translate(-50%, -50%);
-            object-fit: cover; /* Crops cleanly to fill the entire screen */
+            object-fit: cover;
         }
     </style>
 </head>
 <body>
 
-    <!-- 
-      autoplay    : starts the video immediately
-      loop        : repeats the video continuously
-      muted       : silences the audio (required by modern web browsers for autoplay to work)
-      playsinline : optimizes playback on mobile devices
-    -->
-    <video autoplay loop muted playsinline>
-        <source src="vid1.mp4" type="video/mp4">
+    <video id="myPlayer" autoplay muted playsinline>
+        <source id="videoSource" src="vid1.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
+
+    <script>
+        // La liste pour votre test (avec vid2 qui sera manquante)
+        const playlist = ["vid1.mp4", "vid2.mp4", "vid3.mp4"];
+        let currentVideoIndex = 0;
+
+        const player = document.getElementById("myPlayer");
+        const source = document.getElementById("videoSource");
+
+        function playNextVideo() {
+            currentVideoIndex = (currentVideoIndex + 1) % playlist.length;
+            source.src = playlist[currentVideoIndex];
+            player.load();
+            player.play().catch(function(error) {
+                // Empêche le navigateur de bloquer la lecture automatique
+            });
+        }
+
+        // Si la vidéo se termine normalement, on enchaîne
+        player.addEventListener("ended", playNextVideo);
+
+        // Si la vidéo a une erreur (ex: vid2.mp4 n'existe pas), on passe à la suite après 1 seconde
+        player.addEventListener("error", function() {
+            setTimeout(playNextVideo, 1000); // 1000 millisecondes = 1 seconde
+        }, true);
+    </script>
 
 </body>
 </html>
