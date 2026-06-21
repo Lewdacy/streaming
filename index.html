@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fullscreen Video Playlist - Anti Error</title>
+    <title>Seamless Fullscreen Playlist</title>
     <style>
         * { box-sizing: border-box; }
         body, html {
@@ -15,39 +15,62 @@
             width: 100vw; height: 100vh;
             transform: translate(-50%, -50%);
             object-fit: cover;
+            transition: opacity 0.1s ease-in-out;
+        }
+        .hidden {
+            opacity: 0;
+            z-index: 1;
+        }
+        .visible {
+            opacity: 1;
+            z-index: 2;
         }
     </style>
 </head>
 <body>
 
-    <video id="myPlayer" autoplay muted playsinline>
-        <source id="videoSource" src="vid1.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
+    <video id="playerA" class="visible" autoplay muted playsinline src="vid1.mp4"></video>
+    <video id="playerB" class="hidden" muted playsinline src="vid2.mp4" preload="auto"></video>
 
     <script>
-        // La liste pour votre test (avec vid2 qui sera manquante)
-        const playlist = ["vid1.mp4", "vid2.mp4", "vid3.mp4"];
-        let currentVideoIndex = 0;
+        const playlist = ["vid1.mp4", "vid2.mp4", "vid3.mp4", "vid4.mp4", "vid5.mp4"];
+        let currentTrackIndex = 0;
 
-        const player = document.getElementById("myPlayer");
-        const source = document.getElementById("videoSource");
+        const playerA = document.getElementById("playerA");
+        const playerB = document.getElementById("playerB");
 
-        function playNextVideo() {
-            currentVideoIndex = (currentVideoIndex + 1) % playlist.length;
-            source.src = playlist[currentVideoIndex];
-            player.load();
-            player.play().catch(function(error) {
-                // Empêche le navigateur de bloquer la lecture automatique
+        function switchPlayers(activePlayer, nextPlayer) {
+            nextPlayer.play().then(() => {
+                nextPlayer.className = "visible";
+                activePlayer.className = "hidden";
+
+                currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+                const nextTrackIndex = (currentTrackIndex + 1) % playlist.length;
+                
+                activePlayer.src = playlist[nextTrackIndex];
+                activePlayer.load();
+            }).catch(error => {
+                currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+                const skippedIndex = (currentTrackIndex + 1) % playlist.length;
+                nextPlayer.src = playlist[skippedIndex];
+                nextPlayer.load();
+                switchPlayers(activePlayer, nextPlayer);
             });
         }
 
-        // Si la vidéo se termine normalement, on enchaîne
-        player.addEventListener("ended", playNextVideo);
+        playerA.addEventListener("ended", function() {
+            switchPlayers(playerA, playerB);
+        });
 
-        // Si la vidéo a une erreur (ex: vid2.mp4 n'existe pas), on passe à la suite après 1 seconde
-        player.addEventListener("error", function() {
-            setTimeout(playNextVideo, 1000); // 1000 millisecondes = 1 seconde
+        playerB.addEventListener("ended", function() {
+            switchPlayers(playerB, playerA);
+        });
+
+        playerA.addEventListener("error", function() {
+            switchPlayers(playerA, playerB);
+        }, true);
+        playerB.addEventListener("error", function() {
+            switchPlayers(playerB, playerA);
         }, true);
     </script>
 
